@@ -346,7 +346,7 @@ void loop()
    // hal.console->print(" Altitude:");
     // hal.console->println(alt*100);    
     
-    //DUPADUPA
+    //DUPADUPA DUPA DUPA DUPA
     
 }
 
