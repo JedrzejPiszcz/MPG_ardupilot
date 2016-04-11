@@ -152,7 +152,7 @@ static void ircam_run()
                         i = 0;
                         d = 0;
                 }  
-                ir_roll = constrain_int32(new_roll, (ir_roll-5), (ir_roll+5));
+                ir_roll = constrain_int32(new_roll, (ir_roll-20), (ir_roll+20));
 
             
         ir_roll = constrain_int32(ir_roll, -750, 750);
@@ -207,7 +207,7 @@ static void ircam_run()
             i = 0;
             d = 0;
         }
-        ir_pitch = constrain_int32(new_pitch, (ir_pitch-5), (ir_pitch+5));
+        ir_pitch = constrain_int32(new_pitch, (ir_pitch-20), (ir_pitch+20));
         
         
         ir_pitch = constrain_int32(ir_pitch, -750, 750);
