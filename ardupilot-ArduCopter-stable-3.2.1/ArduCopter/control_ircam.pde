@@ -57,7 +57,7 @@ static void ircam_run()
         target_yaw_rate = get_pilot_desired_yaw_rate(g.rc_4.control_in);
 
         // get pilot desired climb rate
-        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in); //nie uzywamy cimb rate do testow
+        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in); //nie uzywamy climb rate do testow
         
      //   pilot_throttle_scaled = get_pilot_desired_throttle(g.rc_3.control_in); //throttle do testow
 
@@ -91,7 +91,6 @@ static void ircam_run()
         target_roll = get_ir_roll(target_roll, ir_reset);
         target_pitch = get_ir_pitch(target_pitch, ir_reset);
         ir_reset=0;
-        //hal.console->println("LOCK ACQUIRED");
         
         target_yaw_rate = hold_ir_yaw(target_yaw_rate);
         
@@ -99,11 +98,11 @@ static void ircam_run()
         hal.console->println(target_climb_rate);
         
 
-            //automatyczny yaw z momentu inicjalizacji
+        //automatyczny yaw z momentu inicjalizacji
         attitude_control.angle_ef_roll_pitch_rate_ef_yaw_smooth(target_roll, target_pitch, target_yaw_rate, get_smoothing_gain());
         
 
-       // attitude_control.set_throttle_out(pilot_throttle_scaled, true); //uzywam czystego throttle
+        // attitude_control.set_throttle_out(pilot_throttle_scaled, true); //uzywam czystego throttle
 
         // update altitude target and call position controller
         pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
@@ -116,7 +115,7 @@ static void ircam_run()
     static int32_t get_ir_roll(int32_t input_roll, uint8_t reset)
     {
         static float x_error=0;
-      //  static float x_error_compensated;
+    //  static float x_error_compensated;
         static float last_ircam_data;
         int32_t new_roll = 0;
         int32_t p,i,d;
@@ -127,15 +126,10 @@ static void ircam_run()
             };
                 
                 
-               // if (ircam.get_lock_check()>=3)//kompensacja błędu wychylenia w osi x - roll
-              //  {   
-                    x_error = ircam.get_compensated_error_x();
-                    //x_error_compensated = ((tanf(ahrs.roll))*ircam.get_cm_alt());
-               // }else
-               // {   
-                   // x_error = last_ircam_data;
-              //  }                
-                last_ircam_data = x_error;
+           
+                x_error = ircam.get_compensated_error_x();
+                           
+                //last_ircam_data = x_error;
 
                 if(input_roll == 0)
                     {
@@ -170,7 +164,7 @@ static void ircam_run()
     static int32_t get_ir_pitch(int32_t input_pitch, uint8_t reset)
     {
         static float y_error=0;
-        //static float y_error_compensated = 0;
+      //static float y_error_compensated = 0;
         static float last_ircam_data;
         int32_t new_pitch = 0;
         int32_t p,i,d;
@@ -180,18 +174,9 @@ static void ircam_run()
             last_ircam_data=0;
             };
         
-     //   if(ircam.get_lock_check()>=3) //kompensacja błędu wychylenia w osi y - pitch
-       // {
-         //   hal.console->print("kompensacja");
             y_error = ircam.get_compensated_error_y();
-       //     y_error_compensated = ((tanf(ahrs.pitch))*ircam.get_cm_alt());
-      //  }else
-      //  {   
-        
-           // hal.console->print("Poza zasiegiem");
-       //     y_error = last_ircam_data;
-      //  }
-        last_ircam_data = y_error;
+       
+           // last_ircam_data = y_error;
         
         if( input_pitch == 0) 
         {
@@ -212,7 +197,7 @@ static void ircam_run()
         
         ir_pitch = constrain_int32(ir_pitch, -750, 750);
         
-     /*   hal.console->print(" --- Wysokosc: ");
+    /*  hal.console->print(" --- Wysokosc: ");
         hal.console->print(ircam.get_cm_alt());
         
         hal.console->print(" --- Pitch: ");
@@ -221,8 +206,8 @@ static void ircam_run()
         hal.console->print(" --- Error: ");
         hal.console->println(y_error);
                 
-      //  hal.console->print(" --- Kompensacja: ");
-     //   hal.console->println(y_error_compensated);*/
+        hal.console->print(" --- Kompensacja: ");
+        hal.console->println(y_error_compensated);*/
 
         return (input_pitch+ir_pitch);
     };
