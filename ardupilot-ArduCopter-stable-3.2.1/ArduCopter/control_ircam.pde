@@ -24,7 +24,7 @@ static bool ircam_init(bool ignore_checks)
 
 }
 
-// newflightmode_run - runs the main controller
+
 // will be called at 100hz or more
 static void ircam_run()
 {
@@ -86,14 +86,13 @@ static void ircam_run()
         pos_control.set_alt_target_to_current_alt();
         reset_ircam_I();
     }else{
-        // mix in user control with optical flow
-        //if(ircam.get_read_successful()) //check if camera get lock on at least 2 IR sources
-        //{
+        // mix in user control with IR Camera
+        
         target_roll = get_ir_roll(target_roll, ir_reset);
         target_pitch = get_ir_pitch(target_pitch, ir_reset);
         ir_reset=0;
         //hal.console->println("LOCK ACQUIRED");
-        // };
+        
         target_yaw_rate = hold_ir_yaw(target_yaw_rate);
         
         hal.console->print("Target climb: ");
@@ -141,7 +140,7 @@ static void ircam_run()
                 if(input_roll == 0)
                     {
                         p = g.pid_ircam_roll.get_p(x_error);
-                        i = g.pid_ircam_roll.get_i(x_error,1.0f);    // we could use the last update time to calculate the time change
+                        i = g.pid_ircam_roll.get_i(x_error,1.0f);
                         d = g.pid_ircam_roll.get_d(x_error,1.0f);
                         new_roll = p+i+d;
                        
@@ -266,7 +265,7 @@ static void ircam_run()
             if (input_yaw==0)
             {
                 p = g.pid_ircam_yaw.get_p(yaw_error);
-                i = g.pid_ircam_yaw.get_i(yaw_error,1.0f); // we could use the last update time to calculate the time change
+                i = g.pid_ircam_yaw.get_i(yaw_error,1.0f);
                 d = g.pid_ircam_yaw.get_d(yaw_error,1.0f);
                 new_yaw = p+i+d;
             }else
