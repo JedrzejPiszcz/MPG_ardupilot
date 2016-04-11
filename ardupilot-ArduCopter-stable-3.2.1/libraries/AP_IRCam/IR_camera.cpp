@@ -46,7 +46,7 @@ extern const AP_HAL::HAL& hal;
     if(Write_2bytes(0x08,0xC0)!=0){_i2c_sem->give(); return false;};
     if(Write_2bytes(0x1A,0x40)!=0){_i2c_sem->give(); return false;}; 
     if(Write_2bytes(0x33,mode)!=0){_i2c_sem->give(); return false;};  //mode = 3;
-  //  hal.scheduler->delay(100);
+
     _i2c_sem->give();
     
     for (uint8_t i; i<=3; i++)//zerowanie tablicy dla midpoint_v2
@@ -56,17 +56,6 @@ extern const AP_HAL::HAL& hal;
             _last_blob_tab[i].size=0;
         }
         
-       /* hal.console->println("");
-        hal.console->println("");
-        hal.console->print("Number of blobs: ");
-        hal.console->print(count_blobs());
-        hal.console->println("Init blobs: ");*/
-     
-   /*     for (uint8_t i=0; i<=3; i++)
-            {
-                blob_print(_last_blob_tab[i]);
-            }*/
-       // hal.console->println("");
     return true;
  }
  
@@ -155,7 +144,7 @@ extern const AP_HAL::HAL& hal;
         return number_of_blobs;
  }
 
- bool    IRCamera::blobs_avilable(void) //JAKIKOLWIEK blob jest widziany
+ bool    IRCamera::blobs_avilable(void) //JAKIKOLWIEK blob jest widziany - do usunięcia
  {
     if (count_blobs()>0 && count_blobs()<5)
         {
@@ -211,7 +200,7 @@ extern const AP_HAL::HAL& hal;
  
  bool    IRCamera::calculate_midpoint(void) //stara wersja obliczania pozycji drona, działa nawet z jednym blobem; skokowe zmiany pozycji nie do użytku z filtrem kalmana
  {
-    check_blob_update();
+    check_blob_update(); // to jest tu chyba niepotrzebne???
     
      if(count_blobs()==0)
      {
@@ -564,7 +553,7 @@ extern const AP_HAL::HAL& hal;
         return false;
     }        
     compute_blobs(); //nie przewiduje błędu
-    check_blob_update();
+    check_blob_update(); //albo tutaj jest niepotrzebne albo w metodzie calculate_midpoint()
     calculate_cm_alt();
     
     if(1)                 //Raz znalezione 4 bloby - mozna zaczynac - trzeba resetowac po wyjsciu z trybu!!!
@@ -576,26 +565,6 @@ extern const AP_HAL::HAL& hal;
        // calculate_cm_alt();
         compensate_angle_error();
 
-        //code for processing visualisation
-    /*    for (int i=0; i<4; i++)
-        {       
-          
-                blob_print(_last_blob_tab[i]);
-                if (i<3){ hal.console->print(",");};
-                
-        }
-        hal.console->print(",");
-        hal.console->print(static_cast<int>(_midpoint.x)); 
-        hal.console->print(",");
-        hal.console->print(static_cast<int>(_midpoint.y)); 
-        hal.console->print(",");
-        hal.console->print(static_cast<int>(_cm_alt));
-         hal.console->print(",");
-        hal.console->print(static_cast<int>(_error_compensated.x));
-        hal.console->print(",");
-        hal.console->print(static_cast<int>(_error_compensated.y));
-        hal.console->println("");*/
-        //the end
     
         return true;
     }else 
@@ -607,7 +576,7 @@ extern const AP_HAL::HAL& hal;
  }  
  
  
- bool    IRCamera::blob_print(pointf blob) //do usuniecia
+ bool    IRCamera::blob_print(pointf blob) //do testów
  {
      
      if (static_cast<int>(blob.x) < 1000)

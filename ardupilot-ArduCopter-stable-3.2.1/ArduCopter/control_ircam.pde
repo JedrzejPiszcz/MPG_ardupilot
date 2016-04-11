@@ -24,7 +24,7 @@ static bool ircam_init(bool ignore_checks)
 
 }
 
-// newflightmode_run - runs the main controller
+
 // will be called at 100hz or more
 static void ircam_run()
 {
@@ -57,7 +57,7 @@ static void ircam_run()
         target_yaw_rate = get_pilot_desired_yaw_rate(g.rc_4.control_in);
 
         // get pilot desired climb rate
-        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in); //nie uzywamy cimb rate do testow
+        target_climb_rate = get_pilot_desired_climb_rate(g.rc_3.control_in); //nie uzywamy climb rate do testow
         
      //   pilot_throttle_scaled = get_pilot_desired_throttle(g.rc_3.control_in); //throttle do testow
 
@@ -86,25 +86,23 @@ static void ircam_run()
         pos_control.set_alt_target_to_current_alt();
         reset_ircam_I();
     }else{
-        // mix in user control with optical flow
-        //if(ircam.get_read_successful()) //check if camera get lock on at least 2 IR sources
-        //{
+        // mix in user control with IR Camera
+        
         target_roll = get_ir_roll(target_roll, ir_reset);
         target_pitch = get_ir_pitch(target_pitch, ir_reset);
         ir_reset=0;
-        //hal.console->println("LOCK ACQUIRED");
-        // };
+        
         target_yaw_rate = hold_ir_yaw(target_yaw_rate);
         
         hal.console->print("Target climb: ");
         hal.console->println(target_climb_rate);
         
 
-            //automatyczny yaw z momentu inicjalizacji
+        //automatyczny yaw z momentu inicjalizacji
         attitude_control.angle_ef_roll_pitch_rate_ef_yaw_smooth(target_roll, target_pitch, target_yaw_rate, get_smoothing_gain());
         
 
-       // attitude_control.set_throttle_out(pilot_throttle_scaled, true); //uzywam czystego throttle
+        // attitude_control.set_throttle_out(pilot_throttle_scaled, true); //uzywam czystego throttle
 
         // update altitude target and call position controller
         pos_control.set_alt_target_from_climb_rate(target_climb_rate, G_Dt);
@@ -117,7 +115,7 @@ static void ircam_run()
     static int32_t get_ir_roll(int32_t input_roll, uint8_t reset)
     {
         static float x_error=0;
-      //  static float x_error_compensated;
+    //  static float x_error_compensated;
         static float last_ircam_data;
         int32_t new_roll = 0;
         int32_t p,i,d;
@@ -128,20 +126,15 @@ static void ircam_run()
             };
                 
                 
-               // if (ircam.get_lock_check()>=3)//kompensacja błędu wychylenia w osi x - roll
-              //  {   
-                    x_error = ircam.get_compensated_error_x();
-                    //x_error_compensated = ((tanf(ahrs.roll))*ircam.get_cm_alt());
-               // }else
-               // {   
-                   // x_error = last_ircam_data;
-              //  }                
-                last_ircam_data = x_error;
+           
+                x_error = ircam.get_compensated_error_x();
+                           
+                //last_ircam_data = x_error;
 
                 if(input_roll == 0)
                     {
                         p = g.pid_ircam_roll.get_p(x_error);
-                        i = g.pid_ircam_roll.get_i(x_error,1.0f);    // we could use the last update time to calculate the time change
+                        i = g.pid_ircam_roll.get_i(x_error,1.0f);
                         d = g.pid_ircam_roll.get_d(x_error,1.0f);
                         new_roll = p+i+d;
                        
@@ -153,7 +146,7 @@ static void ircam_run()
                         i = 0;
                         d = 0;
                 }  
-                ir_roll = constrain_int32(new_roll, (ir_roll-5), (ir_roll+5));
+                ir_roll = constrain_int32(new_roll, (ir_roll-20), (ir_roll+20));
 
             
         ir_roll = constrain_int32(ir_roll, -750, 750);
@@ -171,7 +164,7 @@ static void ircam_run()
     static int32_t get_ir_pitch(int32_t input_pitch, uint8_t reset)
     {
         static float y_error=0;
-        //static float y_error_compensated = 0;
+      //static float y_error_compensated = 0;
         static float last_ircam_data;
         int32_t new_pitch = 0;
         int32_t p,i,d;
@@ -181,18 +174,9 @@ static void ircam_run()
             last_ircam_data=0;
             };
         
-     //   if(ircam.get_lock_check()>=3) //kompensacja błędu wychylenia w osi y - pitch
-       // {
-         //   hal.console->print("kompensacja");
             y_error = ircam.get_compensated_error_y();
-       //     y_error_compensated = ((tanf(ahrs.pitch))*ircam.get_cm_alt());
-      //  }else
-      //  {   
-        
-           // hal.console->print("Poza zasiegiem");
-       //     y_error = last_ircam_data;
-      //  }
-        last_ircam_data = y_error;
+       
+           // last_ircam_data = y_error;
         
         if( input_pitch == 0) 
         {
@@ -208,12 +192,12 @@ static void ircam_run()
             i = 0;
             d = 0;
         }
-        ir_pitch = constrain_int32(new_pitch, (ir_pitch-5), (ir_pitch+5));
+        ir_pitch = constrain_int32(new_pitch, (ir_pitch-20), (ir_pitch+20));
         
         
         ir_pitch = constrain_int32(ir_pitch, -750, 750);
         
-     /*   hal.console->print(" --- Wysokosc: ");
+    /*  hal.console->print(" --- Wysokosc: ");
         hal.console->print(ircam.get_cm_alt());
         
         hal.console->print(" --- Pitch: ");
@@ -222,8 +206,8 @@ static void ircam_run()
         hal.console->print(" --- Error: ");
         hal.console->println(y_error);
                 
-      //  hal.console->print(" --- Kompensacja: ");
-     //   hal.console->println(y_error_compensated);*/
+        hal.console->print(" --- Kompensacja: ");
+        hal.console->println(y_error_compensated);*/
 
         return (input_pitch+ir_pitch);
     };
@@ -266,7 +250,7 @@ static void ircam_run()
             if (input_yaw==0)
             {
                 p = g.pid_ircam_yaw.get_p(yaw_error);
-                i = g.pid_ircam_yaw.get_i(yaw_error,1.0f); // we could use the last update time to calculate the time change
+                i = g.pid_ircam_yaw.get_i(yaw_error,1.0f);
                 d = g.pid_ircam_yaw.get_d(yaw_error,1.0f);
                 new_yaw = p+i+d;
             }else
