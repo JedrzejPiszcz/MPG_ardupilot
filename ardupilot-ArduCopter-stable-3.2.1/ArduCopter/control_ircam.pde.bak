@@ -130,18 +130,18 @@ static void ircam_run()
      
      if(input_climb_rate == 0){     
      
-        if(climb_flag==1 & micros()-climb_timer > 2000000)
+        if(climb_flag==1 & micros()-climb_timer > 5000000)
         {
         
-          climb_rate = -50.0;
+          climb_rate = -20.0;
           
         }else{climb_rate = 0.0;};
       }else{climb_rate = 0.0;};  
       
      hal.console->print("input_climb_rate: ");
-     hal.console->print(input_climb_rate);
+     hal.console->println(input_climb_rate);
       
-     hal.console->print(" climb_rate: ");
+     hal.console->print("climb_rate: ");
      hal.console->println(climb_rate);
     
      return (constrain_float(climb_rate+input_climb_rate, -250.0, 250.0));

@@ -603,7 +603,6 @@ static float target_ir_yaw = 0.0;
 static float ir_yaw;
 static float ir_alt;
 static uint8_t ir_reset=1;
-static uint8_t climb_flag=0;
 
 
 
