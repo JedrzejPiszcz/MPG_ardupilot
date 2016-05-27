@@ -131,7 +131,6 @@ AP_AHRS_DCM ahrs(ins, barometer, gps);
 
 uint32_t timer;
 uint32_t timer2;
-uint16_t czas=0;
 
 float x = 0.0;
 float y = 0.0;
@@ -310,9 +309,7 @@ void loop()
     
     if(hal.scheduler->micros()- timer2 > 1000000)
     {
-        czas++;
-        hal.console->print("czas: ");
-        hal.console->println(czas);
+        hal.console->println("minela sekunda");
         timer2 = hal.scheduler->micros();
     }
     
