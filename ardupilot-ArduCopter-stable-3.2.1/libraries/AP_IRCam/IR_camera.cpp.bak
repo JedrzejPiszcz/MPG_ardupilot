@@ -437,6 +437,7 @@ extern const AP_HAL::HAL& hal;
         _pixel_per_cm_ratio = (_pixel_range/DIODES_DIAGONAL_DISTANCE);
         
         
+        
         _midpoint.x=((_last_blob_tab[blob_to_measure_1].x + _last_blob_tab[blob_to_measure_2].x)/2);
         _midpoint.y=((_last_blob_tab[blob_to_measure_1].y + _last_blob_tab[blob_to_measure_2].y)/2);
         
