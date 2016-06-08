@@ -131,6 +131,7 @@ AP_AHRS_DCM ahrs(ins, barometer, gps);
 
 uint32_t timer;
 uint32_t timer2;
+uint16_t czas=0;
 
 float x = 0.0;
 float y = 0.0;
@@ -309,7 +310,9 @@ void loop()
     
     if(hal.scheduler->micros()- timer2 > 1000000)
     {
-        hal.console->println("minela sekunda");
+        czas++;
+      //  hal.console->print("czas: ");
+      //  hal.console->println(czas);
         timer2 = hal.scheduler->micros();
     }
     
@@ -317,7 +320,7 @@ void loop()
             {   barometer.read();
                 x = ircam.get_compensated_error_x();
                 y = ircam.get_compensated_error_y();      
-               // ircam.processing_test();
+                ircam.processing_test();
                 height = ircam.get_cm_alt();
                 unsigned long read_time = hal.scheduler->micros() - timer;
              //   hal.console->println(read_time);

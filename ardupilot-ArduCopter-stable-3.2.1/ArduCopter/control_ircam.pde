@@ -118,8 +118,8 @@ static void ircam_run()
      static uint32_t climb_timer;
      static float climb_rate;
      
-     hal.console->print("climb_flag: ");
-     hal.console->println(climb_flag);
+    // hal.console->print("climb_flag: ");
+    // hal.console->println(climb_flag);
      
      if(ircam.get_compensated_error_x()<20.0 && 
         ircam.get_compensated_error_y()<20.0 && 
@@ -128,21 +128,20 @@ static void ircam_run()
               climb_flag=1;      
         }else{climb_flag=0;};
      
-     if(input_climb_rate == 0){     
+     if(input_climb_rate <= 25 && input_climb_rate >= -25 ){     
      
-        if(climb_flag==1 & micros()-climb_timer > 2000000)
-        {
+        if(climb_flag==1 & micros()-climb_timer > 2000000){
         
           climb_rate = -50.0;
           
         }else{climb_rate = 0.0;};
       }else{climb_rate = 0.0;};  
       
-     hal.console->print("input_climb_rate: ");
-     hal.console->print(input_climb_rate);
+    // hal.console->print("input_climb_rate: ");
+    // hal.console->print(input_climb_rate);
       
-     hal.console->print(" climb_rate: ");
-     hal.console->println(climb_rate);
+    // hal.console->print(" climb_rate: ");
+    // hal.console->println(climb_rate);
     
      return (constrain_float(climb_rate+input_climb_rate, -250.0, 250.0));
     }
