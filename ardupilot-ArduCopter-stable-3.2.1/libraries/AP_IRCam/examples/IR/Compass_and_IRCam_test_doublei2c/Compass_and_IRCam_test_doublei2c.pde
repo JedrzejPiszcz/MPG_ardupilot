@@ -177,7 +177,7 @@ void setup() {
         break;
     }
 
-    hal.scheduler->delay(1000);
+    hal.scheduler->delay(100);
     timer = hal.scheduler->micros();
     timer2= hal.scheduler->micros();
     
@@ -188,11 +188,11 @@ void setup() {
         else{
         //hal.console->println("IRCamera Init FAILED");
         };
-    hal.scheduler->delay(1000);
+    hal.scheduler->delay(100);
     
  //   hal.console->println("Barometer library test");
 
-    hal.scheduler->delay(1000);
+    hal.scheduler->delay(100);
 
     #if CONFIG_HAL_BOARD == HAL_BOARD_APM2
     // disable CS on MPU6000
@@ -225,7 +225,7 @@ void setup() {
     
    // hal.console->println("READY");
     
-     hal.scheduler->delay(1000);
+     hal.scheduler->delay(100);
     
 }
 
@@ -311,8 +311,8 @@ void loop()
     if(hal.scheduler->micros()- timer2 > 1000000)
     {
         czas++;
-        hal.console->print("czas: ");
-        hal.console->println(czas);
+      //  hal.console->print("czas: ");
+      //  hal.console->println(czas);
         timer2 = hal.scheduler->micros();
     }
     
@@ -320,7 +320,7 @@ void loop()
             {   barometer.read();
                 x = ircam.get_compensated_error_x();
                 y = ircam.get_compensated_error_y();      
-               // ircam.processing_test();
+                ircam.processing_test();
                 height = ircam.get_cm_alt();
                 unsigned long read_time = hal.scheduler->micros() - timer;
              //   hal.console->println(read_time);
