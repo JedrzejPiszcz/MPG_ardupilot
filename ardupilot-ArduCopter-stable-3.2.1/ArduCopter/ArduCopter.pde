@@ -602,8 +602,9 @@ static float target_ir_yaw = 0.0;
 //static float target_ir_yaw_offset=0.0; do usuniecia
 static float ir_yaw;
 static float ir_alt;
-static uint8_t ir_reset=1;
-static uint8_t climb_flag=0;
+static uint8_t ir_reset = 1;
+static uint8_t climb_flag = 0;
+static uint8_t land_flag = 0;
 
 
 
