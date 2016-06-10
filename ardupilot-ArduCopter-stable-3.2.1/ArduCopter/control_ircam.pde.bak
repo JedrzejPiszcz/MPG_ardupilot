@@ -17,6 +17,8 @@ static bool ircam_init(bool ignore_checks)
         pos_control.set_target_to_stopping_point_z();
         
         target_ir_yaw = ahrs.yaw_sensor;
+        
+        land_flag = 0;
 
         init_ircam();
         
@@ -116,32 +118,61 @@ static void ircam_run()
     static float get_climb_rate(float input_climb_rate)
     {
      static uint32_t climb_timer;
+     static uint32_t land_timer;
      static float climb_rate;
+     float dist_center = (powf(ircam.get_compensated_error_x(), 2) + powf(ircam.get_compensated_error_y(),2));
      
     // hal.console->print("climb_flag: ");
     // hal.console->println(climb_flag);
+    
      
-     if(ircam.get_compensated_error_x()<20.0 && 
-        ircam.get_compensated_error_y()<20.0 && 
-        ircam.get_lock_check()>0.0){ 
-           if(climb_flag==0){climb_timer=micros();}
-              climb_flag=1;      
-        }else{climb_flag=0;};
+     if( dist_center < 400.0 && ircam.get_lock_check()>0.0 && baro_alt > 150){ 
+           if(climb_flag==0){
+              climb_timer=micros();
+              climb_flag = 1;}                  
+             
+        }else{climb_flag = 0;
+              climb_rate = 0;}       
+        
+        
+    if( dist_center < 225.0 && ircam.get_lock_check()>0.0 && baro_alt < 150){
+           if(land_flag==0){              
+              land_timer=micros();
+              land_flag=1;}
+  
+        }else{land_flag=0;
+              climb_rate=0;}
      
      if(input_climb_rate <= 25 && input_climb_rate >= -25 ){     
      
-        if(climb_flag==1 & micros()-climb_timer > 2000000){
+        if(climb_flag==1 && micros()-climb_timer > 100 ){
+        
+          climb_rate = -15.0;
+          
+        };
+        
+        if(land_flag==1 && micros()-land_timer > 2000000 ){
         
           climb_rate = -50.0;
-          
-        }else{climb_rate = 0.0;};
-      }else{climb_rate = 0.0;};  
+          land_flag = 2;
+        };
+        
+        if(land_flag==2){
+        
+          climb_rate = -50.0;
+        }
+      };
       
-     hal.console->print("input_climb_rate: ");
+     /*hal.console->print("input_climb_rate: ");
      hal.console->print(input_climb_rate);
+     
+     hal.console->print(" baro alt: ");
+     hal.console->print(baro_alt);
       
      hal.console->print(" climb_rate: ");
-     hal.console->println(climb_rate);
+     hal.console->println(climb_rate);*/
+     
+     
     
      return (constrain_float(climb_rate+input_climb_rate, -250.0, 250.0));
     }
