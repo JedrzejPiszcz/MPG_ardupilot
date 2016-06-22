@@ -469,9 +469,16 @@ extern const AP_HAL::HAL& hal;
                 )
             );*/
             _baro.read();
-            _cm_alt = (_baro.get_altitude()*100) - SENSOR_ABOVE_GROUND_CM;
-            if (_cm_alt<50.0){_cm_alt=50.0;};
-           //  hal.console->println(_cm_alt);
+            _cm_alt=_inertial_nav.get_altitude();
+            if (_cm_alt<0.0){_cm_alt=0.0;};
+           // _cm_alt = (_baro.get_altitude()*100) - SENSOR_ABOVE_GROUND_CM;
+           // if (_cm_alt<50.0){_cm_alt=50.0;};
+            /* hal.console->print(_ahrs.roll_sensor);
+             hal.console->print(" ");
+             hal.console->print(_ahrs.pitch_sensor);
+             hal.console->print(" ");
+             hal.console->println(_cm_alt);*/
+             
             
             return true;
  }
