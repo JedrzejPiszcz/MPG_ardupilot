@@ -75,6 +75,9 @@
 #include <AP_Notify.h>
 #include <AP_Vehicle.h>
 #include <DataFlash.h>
+#include <AP_InertialNav.h>
+#include <AP_GPS_Glitch.h>
+#include <AP_Baro_Glitch.h>  
 
 #include <AP_HAL_AVR.h>
 #include <AP_HAL_AVR_SITL.h>
@@ -121,10 +124,15 @@ AP_InertialSensor ins;
 
 AP_GPS  gps;
 
+static GPS_Glitch gps_glitch(gps);
+
+static Baro_Glitch baro_glitch(barometer);
+
 //AP_Baro_MS5611 baro(&AP_Baro_MS5611::spi);
 
 AP_AHRS_DCM ahrs(ins, barometer, gps);
 
+AP_InertialNav inertial_nav(ahrs, barometer, gps_glitch, baro_glitch);
 //AP_GPS gps;
 
 //AP_AHRS_DCM  ahrs(ins, baro, gps);
@@ -141,7 +149,9 @@ float pix_range = 0.0;
 float height = 0.0;
 float difference = 0.0;
 
-IRCamera ircam(ahrs, barometer);
+float G_Dt=0.02;
+
+IRCamera ircam(ahrs, barometer, inertial_nav);
 
 #define HIGH 1
 #define LOW 0
@@ -224,6 +234,7 @@ void setup() {
     gps.init(NULL);
     
    // hal.console->println("READY");
+     inertial_nav.init();
     
      hal.scheduler->delay(100);
     
@@ -314,13 +325,17 @@ void loop()
       //  hal.console->print("czas: ");
       //  hal.console->println(czas);
         timer2 = hal.scheduler->micros();
-    }
+    };
+    
+    
+   // hal.console->println(ahrs.get_dcm_matrix.x);                         TUTEJ
+   // hal.console->println(ahrs.dcm_matrix.y);
     
     if(ircam.read())
             {   barometer.read();
                 x = ircam.get_compensated_error_x();
                 y = ircam.get_compensated_error_y();      
-                ircam.processing_test();
+               // ircam.processing_test();
                 height = ircam.get_cm_alt();
                 unsigned long read_time = hal.scheduler->micros() - timer;
              //   hal.console->println(read_time);
@@ -332,12 +347,19 @@ void loop()
 
     
     
-   // float alt = barometer.get_altitude();
+    float alt = barometer.get_altitude();
     
     if (!barometer.healthy()) {
             hal.console->println("not healthy");
             return;
         }
+    inertial_nav.update(G_Dt);    
+    
+   // hal.console->print("ALT: ");
+   // hal.console->print(alt*100);
+    
+   // hal.console->print(" ALT POPRAWIANY: ");
+   // hal.console->println(inertial_nav.get_altitude());
     
 }
 
