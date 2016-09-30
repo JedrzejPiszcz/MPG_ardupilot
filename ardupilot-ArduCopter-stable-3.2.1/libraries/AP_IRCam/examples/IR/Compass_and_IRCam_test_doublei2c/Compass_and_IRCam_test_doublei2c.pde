@@ -345,7 +345,8 @@ void loop()
                 hal.console->println("Read Failed");
             };
 
-    
+    ircam.processing_test();
+
     
     float alt = barometer.get_altitude();
     
