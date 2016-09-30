@@ -151,7 +151,7 @@ float difference = 0.0;
 
 float G_Dt=0.02;
 
-IRCamera ircam(ahrs, barometer);
+IRCamera ircam(ahrs, barometer, inertial_nav);
 
 #define HIGH 1
 #define LOW 0
@@ -345,7 +345,11 @@ void loop()
                 hal.console->println("Read Failed");
             };
 
-    
+    ircam.processing_test();
+    hal.console->print(",");
+    hal.console->print(ahrs.roll);
+    hal.console->print(",");
+    hal.console->print(ahrs.pitch);
     
     float alt = barometer.get_altitude();
     

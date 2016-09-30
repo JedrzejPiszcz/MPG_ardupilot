@@ -36,6 +36,10 @@ extern const AP_HAL::HAL& hal;
     _camera_lock_acquired = 0;
     _landpoint_midpoint_distance.x = 0.0;
     _landpoint_midpoint_distance.y = 0.0;
+    _midpoint.x = 0.0;
+    _midpoint.y = 0.0;
+    
+    //_last_blob_tab[0]
     if (!_i2c_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
         hal.scheduler->panic(PSTR("Failed to get IRCAM semaphore"));
     }
@@ -75,7 +79,7 @@ extern const AP_HAL::HAL& hal;
         _i2c_sem->give();
         return false;
     }
-    
+     
     for (i=0;i<16;i++) { data_buf[i]=0; }
     i=0;
     
@@ -156,8 +160,10 @@ extern const AP_HAL::HAL& hal;
  } 
  
  bool    IRCamera::check_blob_update(void) //aktualizacja pozycji blobów które się zmieniły od ostatniego odczytu
- {
-   if(camera_lock()) // zmienic na camera_lock()
+ { 
+   pointf copy_blob;
+   
+   if(camera_lock()) // zmienic na camera_lock() = po prostu jeżeli są 4 bloby
         {
             for(uint8_t i=0; i<=3; i++)
                 {
@@ -195,12 +201,34 @@ extern const AP_HAL::HAL& hal;
                     }
                 }            
         }
+    if(count_blobs()>1)
+        {        
+    for(uint8_t i=0; i<=3; i++) //znajduję widzianego bloba i przepisuje co copy_blob
+                {
+                    if(blob_visible(&_blob_tab[i]))
+                    {
+                    copy_blob.x    = static_cast<float>(_blob_tab[i].x);
+                    copy_blob.y    = static_cast<float>(_blob_tab[i].y);
+                    copy_blob.size = _blob_tab[i].size;
+                    }
+                }
+                
+    for(uint8_t i=0; i<=3; i++) //przepisuję copy_blob do wszystkich nie widzianych blobow
+                {
+                    if(!blob_visible(&_blob_tab[i]))
+                    {
+                    _last_blob_tab[i].x    = copy_blob.x;
+                    _last_blob_tab[i].y    = copy_blob.y;
+                    _last_blob_tab[i].size = copy_blob.size; 
+                    }
+                }
+        }
     return true;
  }
  
  bool    IRCamera::calculate_midpoint(void) //stara wersja obliczania pozycji drona, działa nawet z jednym blobem; skokowe zmiany pozycji nie do użytku z filtrem kalmana
  {
-    check_blob_update(); // to jest tu chyba niepotrzebne???
+    //check_blob_update(); // to jest tu chyba niepotrzebne???
     
      if(count_blobs()==0)
      {
@@ -330,13 +358,15 @@ extern const AP_HAL::HAL& hal;
                         {
                             blob_to_measure_1 = i;
                             blob_to_measure_2 = j;
-                            _pixel_range=dist[blob_to_measure_1][blob_to_measure_2];
+                            //_pixel_range=dist[blob_to_measure_1][blob_to_measure_2];
                         }
                 
             }
         }
         _midpoint.x=((temp_tab[blob_to_measure_1].x + temp_tab[blob_to_measure_2].x)/2);
         _midpoint.y=((temp_tab[blob_to_measure_1].y + temp_tab[blob_to_measure_2].y)/2); 
+        
+        _pixel_range = IR_CAMERA_CONSTANT* fast_atan((DIODES_DIAGONAL_DISTANCE/_cm_alt));
         _pixel_per_cm_ratio = (_pixel_range/DIODES_DIAGONAL_DISTANCE);        
         return true;
     }
@@ -365,7 +395,7 @@ extern const AP_HAL::HAL& hal;
                         {
                             blob_to_measure_1 = i;
                             blob_to_measure_2 = j;
-                            _pixel_range=dist[blob_to_measure_1][blob_to_measure_2];
+                            //_pixel_range=dist[blob_to_measure_1][blob_to_measure_2];
                         }
                 
             }
@@ -376,7 +406,7 @@ extern const AP_HAL::HAL& hal;
         
         _midpoint.x=((_last_blob_tab[blob_to_measure_1].x + _last_blob_tab[blob_to_measure_2].x)/2);
         _midpoint.y=((_last_blob_tab[blob_to_measure_1].y + _last_blob_tab[blob_to_measure_2].y)/2);
-        
+        _pixel_range = IR_CAMERA_CONSTANT* fast_atan((DIODES_DIAGONAL_DISTANCE/_cm_alt));
         _pixel_per_cm_ratio = (_pixel_range/DIODES_DIAGONAL_DISTANCE);
         
         return true;
@@ -425,20 +455,14 @@ extern const AP_HAL::HAL& hal;
         }
                 
          
-                _pixel_range=safe_sqrt(
+                /*_pixel_range=safe_sqrt(
                                 pow(
                                     fabs(_last_blob_tab[blob_to_measure_1].x - _last_blob_tab[blob_to_measure_2].x),2
                                         )+
                                 pow(
                                     fabs(_last_blob_tab[blob_to_measure_1].y - _last_blob_tab[blob_to_measure_2].y),2
                                         )
-                                          );
-                                  
-        _pixel_per_cm_ratio = (_pixel_range/DIODES_DIAGONAL_DISTANCE);
-        
-        
-        _midpoint.x=((_last_blob_tab[blob_to_measure_1].x + _last_blob_tab[blob_to_measure_2].x)/2);
-        _midpoint.y=((_last_blob_tab[blob_to_measure_1].y + _last_blob_tab[blob_to_measure_2].y)/2);
+                                          );*/
         
         if(_one_diode_mode==true)
         {      
@@ -446,16 +470,23 @@ extern const AP_HAL::HAL& hal;
             _one_diode_mode=false;
         };
         
+        _midpoint.x=((_last_blob_tab[blob_to_measure_1].x + _last_blob_tab[blob_to_measure_2].x)/2);
+        _midpoint.y=((_last_blob_tab[blob_to_measure_1].y + _last_blob_tab[blob_to_measure_2].y)/2);
+        
         return true;
     
  }
  
- bool    IRCamera::calculate_landpoint_midpoint_distance(void) //obliczanie błędu pozycji, odlegość między pożadanym punktem, a aktualnym wyskalowana do zakresu <-100;100>
+ bool    IRCamera::calculate_landpoint_midpoint_distance(void) //obliczanie błędu pozycji, odlegość między pożadanym punktem, a aktualnym
  {
     
-    _landpoint_midpoint_distance.x = ((_midpoint.x - _landpoint.x)/_pixel_per_cm_ratio);
+    _landpoint_midpoint_distance.x = (((_midpoint.x - _landpoint.x)+1)/_pixel_per_cm_ratio);
     
-    _landpoint_midpoint_distance.y = ((_midpoint.y - _landpoint.y)/_pixel_per_cm_ratio);
+    _landpoint_midpoint_distance.y = (((_midpoint.y - _landpoint.y)+1)/_pixel_per_cm_ratio);
+    
+    //_landpoint_midpoint_distance.x = ((_midpoint.x - _landpoint.x)+1)/5.12;
+    
+    //_landpoint_midpoint_distance.y = ((_midpoint.y - _landpoint.y)+1)/5.12;
     
     return true;
  }
@@ -463,22 +494,15 @@ extern const AP_HAL::HAL& hal;
  bool    IRCamera::calculate_cm_alt(void)
  {
  
-            /*_cm_alt = (DIODES_DIAGONAL_DISTANCE/
-                (tanf
-                        (_pixel_range/IR_CAMERA_CONSTANT)
-                )
-            );*/
             _baro.read();
+            
             _cm_alt=_inertial_nav.get_altitude();
-            if (_cm_alt<0.0){_cm_alt=0.0;};
-           // _cm_alt = (_baro.get_altitude()*100) - SENSOR_ABOVE_GROUND_CM;
-           // if (_cm_alt<50.0){_cm_alt=50.0;};
-            /* hal.console->print(_ahrs.roll_sensor);
-             hal.console->print(" ");
-             hal.console->print(_ahrs.pitch_sensor);
-             hal.console->print(" ");
-             hal.console->println(_cm_alt);*/
-             
+            
+            if (_cm_alt<0.0){_cm_alt=1.0;}; 
+            
+            _pixel_range = IR_CAMERA_CONSTANT * fast_atan((DIODES_DIAGONAL_DISTANCE/_cm_alt));
+        
+            _pixel_per_cm_ratio = (_pixel_range/DIODES_DIAGONAL_DISTANCE);
             
             return true;
  }
@@ -523,8 +547,10 @@ extern const AP_HAL::HAL& hal;
      _error_compensated.x = (-_landpoint_midpoint_distance.x -((tanf(_ahrs.roll))*_cm_alt));
      _error_compensated.y = (_landpoint_midpoint_distance.y -((tanf(_ahrs.pitch))*_cm_alt));
     };
-    // _error_compensated.x = -_landpoint_midpoint_distance.x;
-    // _error_compensated.y = _landpoint_midpoint_distance.y;
+    
+     //_error_compensated.x = -_landpoint_midpoint_distance.x;
+     //_error_compensated.y = _landpoint_midpoint_distance.y;
+     
      return true;
  }
  
@@ -553,8 +579,8 @@ extern const AP_HAL::HAL& hal;
     if(1)                 //Raz znalezione 4 bloby - mozna zaczynac - trzeba resetowac po wyjsciu z trybu!!!
     { //_camera_lock_acquired==1
         _read_successful=true;
-        //calculate_midpoint_v2();
-        calculate_midpoint();
+        calculate_midpoint_v2();
+        //calculate_midpoint();
         calculate_landpoint_midpoint_distance();
        // calculate_cm_alt();
         compensate_angle_error();
@@ -612,14 +638,20 @@ extern const AP_HAL::HAL& hal;
                 
         }
         hal.console->print(",");
-        hal.console->print(static_cast<int>(_midpoint.x)); 
+        hal.console->print(static_cast<int>(_midpoint.x)); //_midpoint.x
         hal.console->print(",");
-        hal.console->print(static_cast<int>(_midpoint.y)); 
+        hal.console->print(static_cast<int>(_midpoint.y)); //_midpoint.y
         hal.console->print(",");
         hal.console->print(static_cast<int>(_cm_alt));
         hal.console->print(",");
         hal.console->print(static_cast<int>(_error_compensated.x));
         hal.console->print(",");
         hal.console->print(static_cast<int>(_error_compensated.y));
+        hal.console->print(",");
+        hal.console->print(static_cast<int>(_ahrs.roll*1000));
+        hal.console->print(",");
+        hal.console->print(static_cast<int>(_ahrs.pitch*1000));
+        //hal.console->print(",PIXEL PER CM RATIO:");
+       // hal.console->print(_pixel_per_cm_ratio);
         hal.console->println(""); 
  };
